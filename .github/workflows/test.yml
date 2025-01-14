@@ -41,3 +41,6 @@ jobs:
       - name: has path
         run: |
           cargo run -- has /a/b/c
+          cargo run -- has "c:\windows"
+          cargo run -- has /bin
+          cargo run -- has /usr/bin
