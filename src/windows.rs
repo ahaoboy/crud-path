@@ -1,3 +1,5 @@
+use crate::exec;
+
 pub fn add_path(path: &str) -> bool {
     let mode = if is_admin::is_admin() {
         "Machine"
@@ -13,13 +15,7 @@ pub fn add_path(path: &str) -> bool {
 
 #[cfg(test)]
 mod test {
-    use super::{add_path, get_path};
-
-    #[test]
-    fn test_get_path() {
-        let path = get_path();
-        assert!(path.len() > 0)
-    }
+    use super::add_path;
 
     #[test]
     fn test_add_path() {

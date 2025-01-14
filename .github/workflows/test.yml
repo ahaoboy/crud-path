@@ -1,0 +1,43 @@
+name: Test
+
+permissions:
+  contents: write
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -CeEuo pipefail {0}
+
+jobs:
+  rust-test:
+    strategy:
+      matrix:
+        os: [
+            ubuntu-24.04,
+            windows-latest,
+            macos-latest,
+            macos-13,
+          ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: cargo run
+        run: |
+          cargo run
+          cargo run -- get
+      - name: add path
+        run: |
+          cargo run -- add /a/b/c
+      - name: has path
+        run: |
+          cargo run -- has /a/b/c
