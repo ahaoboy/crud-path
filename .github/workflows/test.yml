@@ -41,10 +41,12 @@ jobs:
       - name: add path
         run: |
           cargo run -- add /a/b/c
+          cargo run -- add c:/b/c
       - name: has path
         run: |
           source ~/.bashrc
           cargo run -- has /a/b/c
+          cargo run -- has "c:/b/c"
           cargo run -- has "C:\Windows"
           cargo run -- has /bin
           cargo run -- has /usr/bin
