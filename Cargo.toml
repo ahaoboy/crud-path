@@ -12,3 +12,6 @@ authors = ["ahaoboy"]
 
 [dependencies]
 is-admin = "^0.1"
+
+[target.'cfg(unix)'.dependencies]
+which-shell = "^0.1"

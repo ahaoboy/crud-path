@@ -1,14 +1,3 @@
-pub fn get_path() -> Vec<String> {
-    let path = std::env::var("PATH")
-        .expect("Failed to get PATH")
-        .to_string();
-    path.split(';').map(|s| s.to_string()).collect()
-}
-
-pub fn has_path(path: &str) -> bool {
-    get_path().contains(&path.to_string())
-}
-
 pub fn add_path(path: &str) -> bool {
     let mode = if is_admin::is_admin() {
         "Machine"
@@ -18,10 +7,8 @@ pub fn add_path(path: &str) -> bool {
     let shell = format!(
         r#"$currentPath = [Environment]::GetEnvironmentVariable("Path", "{mode}");$newPath = "$currentPath;{path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "{mode}")"#,
     );
-    std::process::Command::new("powershell")
-        .args(["-c", &shell])
-        .output()
-        .is_ok()
+
+    exec("powershell", ["-c", &shell])
 }
 
 #[cfg(test)]
@@ -36,7 +23,7 @@ mod test {
 
     #[test]
     fn test_add_path() {
-        let s = "./xxx";
+        let s = "c:/xxx";
         let s = add_path(s);
         assert!(s);
     }
