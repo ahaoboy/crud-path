@@ -40,6 +40,7 @@ jobs:
           cargo run -- add /a/b/c
       - name: has path
         run: |
+          source ~/.bashrc
           cargo run -- has /a/b/c
           cargo run -- has "C:\Windows"
           cargo run -- has /bin
