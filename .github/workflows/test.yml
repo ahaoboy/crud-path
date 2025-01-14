@@ -33,6 +33,9 @@ jobs:
           override: true
       - name: cargo run
         run: |
+          if [ ! -f ~/.bashrc ]; then
+              touch ~/.bashrc
+          fi
           cargo run
           cargo run -- get
       - name: add path
