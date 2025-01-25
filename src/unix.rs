@@ -9,7 +9,6 @@ pub fn add_path(path: &str) -> bool {
 set -gx PATH "{path}" $PATH
 ' >> ~/.config/fish/config.fish"#
                 );
-                println!("shell: {}",shell);
                 return exec("fish", ["-c", &shell]);
             }
             which_shell::Shell::Zsh => {
