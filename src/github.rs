@@ -1,11 +1,16 @@
-pub fn is_github() -> bool {
-    std::env::var("GITHUB_ACTIONS") == Ok("true".to_string())
-}
-
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::path::MAIN_SEPARATOR;
+
+#[cfg(target_os = "windows")]
+const DELIMITER: &str = ";";
+
+#[cfg(not(target_os = "windows"))]
+const DELIMITER: &str = ":";
+
+pub fn is_github() -> bool {
+    std::env::var("GITHUB_ACTIONS") == Ok("true".to_string())
+}
 
 pub fn add_github_path(input_path: &str) -> Option<String> {
     if let Ok(file_path) = env::var("GITHUB_PATH") {
@@ -15,7 +20,7 @@ pub fn add_github_path(input_path: &str) -> Option<String> {
     }
 
     let current_path = env::var("PATH").ok()?;
-    let new_path = format!("{}{}{}", input_path, MAIN_SEPARATOR, current_path);
+    let new_path = format!("{}{}{}", input_path, DELIMITER, current_path);
     env::set_var("PATH", &new_path);
     Some(new_path)
 }
@@ -40,10 +45,3 @@ fn issue_file_command(command: &str, message: &str) {
         );
     }
 }
-
-// pub fn add_github_path(path: &str) {
-//     std::process::Command::new("bash")
-//         .args(["-c", &format!(r#"echo "PATH=$PATH:{path}" >> $GITHUB_ENV"#)])
-//         .output()
-//         .expect("add_github_path error");
-// }
