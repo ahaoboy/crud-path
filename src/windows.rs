@@ -1,6 +1,7 @@
 use crate::exec;
+use which_shell::Shell;
 
-pub fn add_path(path: &str) -> bool {
+pub fn add_path(path: &str) -> Option<Shell> {
     let mode = if is_admin::is_admin() {
         "Machine"
     } else {
@@ -10,7 +11,10 @@ pub fn add_path(path: &str) -> bool {
         r#"$currentPath = [Environment]::GetEnvironmentVariable("Path", "{mode}");$newPath = "$currentPath;{path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "{mode}")"#,
     );
 
-    exec("powershell", ["-c", &shell])
+    if exec("powershell", ["-c", &shell]) {
+      return Some(Shell::PowerShell);
+    }
+    None
 }
 
 #[cfg(test)]
@@ -21,6 +25,6 @@ mod test {
     fn test_add_path() {
         let s = "c:/xxx";
         let s = add_path(s);
-        assert!(s);
+        assert!(s.is_some());
     }
 }

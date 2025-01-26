@@ -5,7 +5,7 @@ fn main() {
         match cmd.as_str() {
             "add" => {
                 if let Some(path) = std::env::args().nth(2) {
-                    println!("{}", add_path(&path));
+                    println!("{}", add_path(&path).is_some());
                     return;
                 }
             }
