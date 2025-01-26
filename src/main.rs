@@ -27,6 +27,8 @@ fn main() {
                 if let Some(path) = std::env::args().nth(2) {
                     if is_github() {
                         println!("{}", add_github_path(&path).unwrap());
+                    } else {
+                        println!("not in github action")
                     }
                 }
                 return;
