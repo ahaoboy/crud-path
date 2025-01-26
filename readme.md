@@ -11,6 +11,8 @@ crud-path get
 crud-path add /a/b/c
 source ~/.bashrc
 crud-path has /a/b/c
+crud-path is_github
+crud-path add_github_path /x/y
 
 ```
 
