@@ -10,3 +10,6 @@ pub use unix::*;
 pub mod windows;
 #[cfg(target_os = "windows")]
 pub use windows::*;
+
+mod github;
+pub use github::*;

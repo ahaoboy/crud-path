@@ -50,3 +50,12 @@ jobs:
           cargo run -- has "C:\Windows"
           cargo run -- has /bin
           cargo run -- has /usr/bin
+      - name: github path
+        run: |
+          cargo run -- is_github
+          cargo run -- add_github_path /x/y
+          cargo run -- add_github_path c:/x/y
+      - name: test github path
+        run: |
+          cargo run -- has /x/y
+          cargo run -- has c:/x/y

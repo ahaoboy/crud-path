@@ -31,6 +31,6 @@ mod test {
     #[test]
     fn test_get_path() {
         let path = get_path();
-        assert!(path.len() > 0)
+        assert!(!path.is_empty())
     }
 }
