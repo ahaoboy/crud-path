@@ -59,3 +59,47 @@ jobs:
         run: |
           cargo run -- has /x/y
           cargo run -- has c:/x/y
+  js-test:
+    strategy:
+      matrix:
+        os: [
+            ubuntu-24.04,
+            windows-latest,
+            macos-latest,
+            macos-13,
+          ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: build
+        run: |
+          if [ ! -f ~/.bashrc ]; then
+              touch ~/.bashrc
+          fi
+          pnpm install
+          pnpm run build
+      - name: add path
+        run: |
+          node bundle/cli.js add /a/b/c
+          node bundle/cli.js add c:/b/c
+      - name: has path
+        run: |
+          source ~/.bashrc
+          node bundle/cli.js has /a/b/c
+          node bundle/cli.js has "c:/b/c"
+          node bundle/cli.js has "C:\Windows"
+          node bundle/cli.js has /bin
+          node bundle/cli.js has /usr/bin
+      - name: github path
+        run: |
+          node bundle/cli.js is_github
+          node bundle/cli.js add_github_path /x/y
+          node bundle/cli.js add_github_path c:/x/y
+      - name: test github path
+        run: |
+          node bundle/cli.js has /x/y
+          node bundle/cli.js has c:/x/y

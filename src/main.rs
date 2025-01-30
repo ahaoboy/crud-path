@@ -36,5 +36,5 @@ fn main() {
             _ => {}
         }
     }
-    println!("Usage: curd-path get/has/add <PATH>");
+    println!("Usage: curd-path get/has/add/is_github/add_github_path <PATH>");
 }

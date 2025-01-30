@@ -1,0 +1,42 @@
+{
+  "name": "crud-path",
+  "version": "0.1.0",
+  "description": "crud-path",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
+  "bin": {
+    "crud-path": "bundle/cli.js"
+  },
+  "files": [
+    "dist",
+    "bundle",
+    "readme.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahaoboy/crud-path.git"
+  },
+  "homepage": "https://github.com/ahaoboy/crud-path#readme",
+  "keywords": [
+    "crud-path"
+  ],
+  "author": "ahaoboy",
+  "license": "ISC",
+  "scripts": {
+    "dev": "tsc -w -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.json && npm run bundle",
+    "bundle": "esbuild --outdir=bundle --bundle --minify --platform=node --format=cjs ts/cli.ts",
+    "pre-check": "npm run clippy && npm run format",
+    "clippy": "cargo clippy --fix --allow-dirty --allow-staged",
+    "clear": "rm -rf node_modules dist bundle",
+    "bump": "pnpm up --latest --force",
+    "release": "pnpm publish -r --access public",
+    "release-alpha": "pnpm publish -r --access public --tag alpha"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}
