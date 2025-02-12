@@ -1,6 +1,6 @@
 {
   "name": "crud-path",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "crud-path",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
@@ -35,7 +35,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "esbuild": "^0.24.2",
+    "esbuild": "0.25.0",
     "@types/node": "^22.10.7",
     "typescript": "^5.7.3"
   }

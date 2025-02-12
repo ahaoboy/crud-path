@@ -57,6 +57,10 @@ export function hasPath(path: string) {
   return getPath().includes(path)
 }
 
-export const addPath = process.platform === "win32"
-  ? addPathWindows
-  : addPathUnix
+export const addPath = (path: string) => {
+  const fn = process.platform === "win32"
+    ? addPathWindows
+    : addPathUnix
+  fn(path)
+  process.env["PATH"] = process.env["PATH"] + delimiter + path
+}

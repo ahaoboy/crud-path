@@ -13,3 +13,9 @@ pub use windows::*;
 
 mod github;
 pub use github::*;
+
+#[cfg(target_os = "windows")]
+pub const DELIMITER: char = ';';
+
+#[cfg(not(target_os = "windows"))]
+pub const DELIMITER: char = ':';

@@ -1,4 +1,5 @@
 use std::ffi::OsStr;
+use crate::DELIMITER;
 
 pub(crate) fn exec<S, I>(cmd: S, args: I) -> bool
 where
@@ -12,12 +13,7 @@ pub fn get_path() -> Vec<String> {
     let path = std::env::var("PATH")
         .expect("Failed to get PATH")
         .to_string();
-    let delimiter = if cfg!(target_os = "windows") {
-        ';'
-    } else {
-        ':'
-    };
-    path.split(delimiter).map(|s| s.to_string()).collect()
+    path.split(DELIMITER).map(|s| s.to_string()).collect()
 }
 
 pub fn has_path(path: &str) -> bool {
