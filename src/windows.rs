@@ -14,7 +14,7 @@ pub fn add_path(path: &str) -> Option<Shell> {
     if exec("powershell", ["-c", &shell]) {
         let mut env_path = std::env::var("PATH").unwrap_or_default();
         env_path.push(DELIMITER);
-        env_path.push_str(&path);
+        env_path.push_str(path);
 
         std::env::set_var("PATH", env_path);
         return Some(Shell::PowerShell);

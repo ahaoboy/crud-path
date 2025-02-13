@@ -1,6 +1,6 @@
 {
   "name": "crud-path",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "crud-path",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
@@ -26,6 +26,7 @@
     "dev": "tsc -w -p tsconfig.build.json",
     "build": "tsc -p tsconfig.json && npm run bundle",
     "bundle": "esbuild --outdir=bundle --bundle --minify --platform=node --format=cjs ts/cli.ts",
+    "format": "deno fmt --ignore=node_modules,dist,bundle,target --indent-width=2 --no-semicolons --single-quote",
     "pre-check": "npm run clippy && npm run format",
     "clippy": "cargo clippy --fix --allow-dirty --allow-staged",
     "clear": "rm -rf node_modules dist bundle",
