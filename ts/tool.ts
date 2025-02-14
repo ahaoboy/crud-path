@@ -1,7 +1,6 @@
 import { spawnSync } from 'child_process'
 import { isAdmin } from './is-admin'
 import { delimiter } from 'path'
-import { homedir } from 'os'
 import { whichShell } from 'which-shell'
 
 export function addPathWindows(path: string): string | undefined {
@@ -10,16 +9,21 @@ export function addPathWindows(path: string): string | undefined {
     `$currentPath = [Environment]::GetEnvironmentVariable("Path", "${mode}");$newPath = "$currentPath;${path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "${mode}")`
   const output = spawnSync('powershell', ['-c', shell]).status
   if (output === 0) {
+    const sh = addPathUnix(path)
+    if (sh) {
+      return sh
+    }
     return 'powershell'
   }
 }
+
 export function addPathUnix(pathToAdd: string): string | undefined {
   const shell = whichShell()?.shell
   if (!shell) return
 
   let configFile = ''
   let cmd = ''
-  const home = homedir()
+  const home = "~"
   switch (shell) {
     case 'fish':
       configFile = `${home}/.config/fish/config.fish`

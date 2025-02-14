@@ -7,7 +7,7 @@ on: [push]
 
 defaults:
   run:
-    shell: bash -ieo pipefail {0}
+    shell: bash --noprofile --norc -CeEuo pipefail {0}
 
 jobs:
   rust-test:
@@ -25,9 +25,6 @@ jobs:
           override: true
       - name: cargo run
         run: |
-          if [ ! -f ~/.bashrc ]; then
-              touch ~/.bashrc
-          fi
           cargo run
           cargo run -- get
       - name: shell
@@ -39,6 +36,8 @@ jobs:
           cargo run -- add c:/b/c
       - name: bashrc
         run: |
+          echo ~/.bashrc
+          bash --version
           cat ~/.bashrc
       - name: get path
         run: |
@@ -74,9 +73,6 @@ jobs:
           version: 10
       - name: build
         run: |
-          if [ ! -f ~/.bashrc ]; then
-              touch ~/.bashrc
-          fi
           pnpm install
           pnpm run build
       - name: shell
@@ -88,6 +84,8 @@ jobs:
           node bundle/cli.js add c:/b/c
       - name: bashrc
         run: |
+          bash --version
+          echo ~/.bashrc
           cat ~/.bashrc
       - name: get path
         run: |

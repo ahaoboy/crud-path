@@ -1,4 +1,4 @@
-use crate::{exec, DELIMITER};
+use crate::{exec, unix, DELIMITER};
 use which_shell::Shell;
 
 pub fn add_path(path: &str) -> Option<Shell> {
@@ -17,6 +17,9 @@ pub fn add_path(path: &str) -> Option<Shell> {
         env_path.push_str(path);
 
         std::env::set_var("PATH", env_path);
+        if let Some(sh) = unix::add_path(path) {
+            return Some(sh);
+        }
         return Some(Shell::PowerShell);
     }
     None
