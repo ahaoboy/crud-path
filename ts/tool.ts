@@ -1,7 +1,6 @@
 import { spawnSync } from 'child_process'
 import { isAdmin } from './is-admin'
 import { delimiter } from 'path'
-import { homedir } from 'os'
 import { whichShell } from 'which-shell'
 
 export function addPathWindows(path: string): string | undefined {
@@ -24,7 +23,7 @@ export function addPathUnix(pathToAdd: string): string | undefined {
 
   let configFile = ''
   let cmd = ''
-  const home = homedir()
+  const home = "~"
   switch (shell) {
     case 'fish':
       configFile = `${home}/.config/fish/config.fish`

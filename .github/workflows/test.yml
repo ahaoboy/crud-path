@@ -36,6 +36,8 @@ jobs:
           cargo run -- add c:/b/c
       - name: bashrc
         run: |
+          echo ~/.bashrc
+          bash --version
           cat ~/.bashrc
       - name: get path
         run: |
@@ -82,6 +84,8 @@ jobs:
           node bundle/cli.js add c:/b/c
       - name: bashrc
         run: |
+          bash --version
+          echo ~/.bashrc
           cat ~/.bashrc
       - name: get path
         run: |
