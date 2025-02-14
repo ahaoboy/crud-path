@@ -9,7 +9,7 @@ fn main() {
             }
             "add" => {
                 if let Some(path) = std::env::args().nth(2) {
-                    println!("{}", add_path(&path).is_some());
+                    println!("{:?}", add_path(&path));
                     return;
                 }
             }

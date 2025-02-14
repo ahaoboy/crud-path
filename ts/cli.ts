@@ -17,7 +17,7 @@ switch (cmd) {
 
   case 'add': {
     if (args[1]) {
-      console.log(addPath(args[1]) !== null)
+      console.log(addPath(args[1]))
     }
     break
   }
