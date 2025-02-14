@@ -10,9 +10,14 @@ export function addPathWindows(path: string): string | undefined {
     `$currentPath = [Environment]::GetEnvironmentVariable("Path", "${mode}");$newPath = "$currentPath;${path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "${mode}")`
   const output = spawnSync('powershell', ['-c', shell]).status
   if (output === 0) {
+    const sh = addPathUnix(path)
+    if (sh) {
+      return sh
+    }
     return 'powershell'
   }
 }
+
 export function addPathUnix(pathToAdd: string): string | undefined {
   const shell = whichShell()?.shell
   if (!shell) return
