@@ -3,6 +3,10 @@ use crud_path::{add_github_path, add_path, get_path, has_path, is_github};
 fn main() {
     if let Some(cmd) = std::env::args().nth(1) {
         match cmd.as_str() {
+            "shell" => {
+                println!("{:?}", which_shell::which_shell());
+                return;
+            }
             "add" => {
                 if let Some(path) = std::env::args().nth(2) {
                     println!("{}", add_path(&path).is_some());
@@ -36,5 +40,5 @@ fn main() {
             _ => {}
         }
     }
-    println!("Usage: curd-path get/has/add/is_github/add_github_path <PATH>");
+    println!("Usage: curd-path get/has/add/is_github/add_github_path/shell <PATH>");
 }

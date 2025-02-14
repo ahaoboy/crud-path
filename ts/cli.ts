@@ -1,3 +1,4 @@
+import { whichShell } from 'which-shell'
 import { addGithubPath, isGithub } from './github'
 import { addPath, getPath, hasPath } from './tool'
 
@@ -9,6 +10,11 @@ if (args.length === 0) {
 const cmd = args[0]
 
 switch (cmd) {
+  case 'shell': {
+    console.log(whichShell())
+    break
+  }
+
   case 'add': {
     if (args[1]) {
       console.log(addPath(args[1]) !== null)
@@ -42,7 +48,7 @@ switch (cmd) {
 
   default:
     console.log(
-      'Usage: crud-path get/has/add/is_github/add_github_path <PATH>',
+      'Usage: crud-path get/has/add/is_github/add_github_path/shell <PATH>',
     )
     break
 }

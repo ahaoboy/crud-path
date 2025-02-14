@@ -5,23 +5,15 @@ permissions:
 
 on: [push]
 
-env:
-  CARGO_TERM_COLOR: always
-
 defaults:
   run:
-    shell: bash --noprofile --norc -CeEuo pipefail {0}
+    shell: bash -ieo pipefail {0}
 
 jobs:
   rust-test:
     strategy:
       matrix:
-        os: [
-          ubuntu-24.04,
-          windows-latest,
-          macos-latest,
-          macos-13,
-        ]
+        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -38,13 +30,23 @@ jobs:
           fi
           cargo run
           cargo run -- get
+      - name: shell
+        run: |
+          cargo run -- shell
       - name: add path
         run: |
           cargo run -- add /a/b/c
           cargo run -- add c:/b/c
+      - name: bashrc
+        run: |
+          cat ~/.bashrc
+      - name: get path
+        run: |
+          . ~/.bashrc
+          cargo run -- get
       - name: has path
         run: |
-          source ~/.bashrc
+          . ~/.bashrc
           cargo run -- has /a/b/c
           cargo run -- has "c:/b/c"
           cargo run -- has "C:\Windows"
@@ -62,12 +64,7 @@ jobs:
   js-test:
     strategy:
       matrix:
-        os: [
-          ubuntu-24.04,
-          windows-latest,
-          macos-latest,
-          macos-13,
-        ]
+        os: [ubuntu-24.04, windows-latest, macos-14, macos-13]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -82,13 +79,23 @@ jobs:
           fi
           pnpm install
           pnpm run build
+      - name: shell
+        run: |
+          node bundle/cli.js shell
       - name: add path
         run: |
           node bundle/cli.js add /a/b/c
           node bundle/cli.js add c:/b/c
+      - name: bashrc
+        run: |
+          cat ~/.bashrc
+      - name: get path
+        run: |
+          . ~/.bashrc
+          node bundle/cli.js get
       - name: has path
         run: |
-          source ~/.bashrc
+          . ~/.bashrc
           node bundle/cli.js has /a/b/c
           node bundle/cli.js has "c:/b/c"
           node bundle/cli.js has "C:\Windows"

@@ -1,6 +1,8 @@
 import { spawnSync } from 'child_process'
 import { isAdmin } from './is-admin'
 import { delimiter } from 'path'
+import { homedir } from 'os'
+import { whichShell } from 'which-shell'
 
 export function addPathWindows(path: string): string | undefined {
   const mode = isAdmin() ? 'Machine' : 'User'
@@ -11,46 +13,50 @@ export function addPathWindows(path: string): string | undefined {
     return 'powershell'
   }
 }
-
-function whichShell(): string | undefined {
-  const shell = process.env.SHELL
-  if (!shell) return
-  if (shell.includes('fish')) return 'fish'
-  if (shell.includes('zsh')) return 'zsh'
-  if (shell.includes('bash')) return 'bash'
-}
-
 export function addPathUnix(pathToAdd: string): string | undefined {
-  const shell = whichShell()
+  const shell = whichShell()?.shell
   if (!shell) return
 
   let configFile = ''
   let cmd = ''
-
+  const home = homedir()
   switch (shell) {
     case 'fish':
-      configFile = '~/.config/fish/config.fish'
+      configFile = `${home}/.config/fish/config.fish`
       cmd = `echo 'set -gx PATH "${pathToAdd}" $PATH' >> ${configFile}`
       break
 
     case 'zsh':
-      configFile = '~/.zshrc'
+      configFile = `${home}/.zshrc`
       cmd = `echo 'export PATH="${pathToAdd}:$PATH"' >> ${configFile}`
       break
 
     case 'bash':
-      configFile = '~/.bashrc'
+      configFile = `${home}/.bashrc`
       cmd = `echo 'export PATH="${pathToAdd}:$PATH"' >> ${configFile}`
       break
     default:
       return
   }
-
-  return spawnSync(shell, ['-c', cmd]).status === 0 ? shell : undefined
+  const addLine = `echo "" >> ${configFile}`
+  try {
+    if (
+      [
+        spawnSync(shell, ['-c', addLine]),
+        spawnSync(shell, ['-c', cmd]),
+        spawnSync(shell, ['-c', addLine]),
+      ].every((i) => i.status === 0)
+    ) {
+      return shell
+    }
+  } catch {
+  }
 }
 
 export function getPath() {
-  return process.env['PATH']?.split(delimiter).map(i => i.replaceAll("\\", "/")) || []
+  return process.env['PATH']?.split(delimiter).map((i) =>
+    i.replaceAll('\\', '/')
+  ) || []
 }
 
 export function hasPath(path: string) {
