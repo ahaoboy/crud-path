@@ -11,5 +11,5 @@ authors = ["ahaoboy"]
 
 
 [dependencies]
-is-admin = "^0.1"
-which-shell = "^0.1"
+is-admin = { version = "^0.1", git = "https://github.com/ahaoboy/is-admin.git" }
+which-shell = { version = "^0.1", git = "https://github.com/ahaoboy/which-shell.git" }

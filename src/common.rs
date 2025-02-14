@@ -6,7 +6,11 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    std::process::Command::new(cmd).args(args).output().is_ok()
+    std::process::Command::new(cmd)
+        .envs(std::env::vars())
+        .args(args)
+        .output()
+        .is_ok()
 }
 
 pub fn get_path() -> Vec<String> {
