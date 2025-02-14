@@ -50,7 +50,7 @@ export function addPathUnix(pathToAdd: string): string | undefined {
 }
 
 export function getPath() {
-  return process.env['PATH']?.split(delimiter) || []
+  return process.env['PATH']?.split(delimiter).map(i => i.replaceAll("\\", "/")) || []
 }
 
 export function hasPath(path: string) {
