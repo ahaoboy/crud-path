@@ -7,7 +7,7 @@ on: [push]
 
 defaults:
   run:
-    shell: bash -ieo pipefail {0}
+    shell: bash --noprofile --norc -CeEuo pipefail {0}
 
 jobs:
   rust-test:
