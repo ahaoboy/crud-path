@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process'
-import { isAdmin } from './is-admin'
+import { isAdmin } from '@easy-install/is-admin'
 import { delimiter } from 'path'
 import { whichShell } from 'which-shell'
 
@@ -89,16 +89,14 @@ export function addPathUnix(path: string): string | undefined {
 }
 
 export function getPath() {
-  return process.env['PATH']?.split(delimiter).map((i) =>
-    i.replaceAll('\\', '/')
-  ) || []
+  return process.env['PATH']?.split(delimiter) || []
 }
 
 export function hasPath(path: string) {
   if (process.platform === 'win32') {
     path = toWinPath(path).replaceAll('\\', '/')
   }
-  return !!getPath().find((i) => i.toLowerCase() === path.toLowerCase())
+  return !!getPath().find((i) => i.toLowerCase().replaceAll("\\", '/') === path.toLowerCase())
 }
 
 export const addPath = (path: string) => {
