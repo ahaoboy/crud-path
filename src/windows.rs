@@ -1,14 +1,15 @@
-use crate::{exec, unix, DELIMITER};
+use crate::{exec, to_win_path, unix, DELIMITER};
 use which_shell::Shell;
 
 pub fn add_path(path: &str) -> Option<Shell> {
+    let path_win = to_win_path(path);
     let mode = if is_admin::is_admin() {
         "Machine"
     } else {
         "User"
     };
     let shell = format!(
-        r#"$currentPath = [Environment]::GetEnvironmentVariable("Path", "{mode}");$newPath = "$currentPath;{path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "{mode}")"#,
+        r#"$currentPath = [Environment]::GetEnvironmentVariable("Path", "{mode}");$newPath = "$currentPath;{path_win}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "{mode}")"#,
     );
 
     if exec("powershell", ["-c", &shell]) {

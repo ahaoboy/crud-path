@@ -3,10 +3,37 @@ import { isAdmin } from './is-admin'
 import { delimiter } from 'path'
 import { whichShell } from 'which-shell'
 
+export function isMsys() {
+  return !!process.env['MSYSTEM']
+}
+
+// C:\a\b -> /c/a/b
+export function toMsysPath(path: string): string {
+  path = path.replaceAll('\\', '/')
+  const prefix = path.slice(0, 3)
+  const tail = path.slice(3)
+  if (prefix.length === 3 && prefix.endsWith(':/')) {
+    return `/${prefix[0].toLowerCase()}/${tail}`
+  }
+  return path
+}
+
+// c:/a/b -> C:\a\b
+export function toWinPath(path: string): string {
+  path = path.replaceAll('/', '\\')
+  const prefix = path.slice(0, 3)
+  const tail = path.slice(3)
+  if (prefix.length === 3 && prefix.endsWith(':\\')) {
+    return `${prefix.toUpperCase()}${tail}`
+  }
+  return path
+}
+
 export function addPathWindows(path: string): string | undefined {
   const mode = isAdmin() ? 'Machine' : 'User'
+  const winPath = toWinPath(path)
   const shell =
-    `$currentPath = [Environment]::GetEnvironmentVariable("Path", "${mode}");$newPath = "$currentPath;${path}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "${mode}")`
+    `$currentPath = [Environment]::GetEnvironmentVariable("Path", "${mode}");$newPath = "$currentPath;${winPath}"; [Environment]::SetEnvironmentVariable("Path", $newPath, "${mode}")`
   const output = spawnSync('powershell', ['-c', shell]).status
   if (output === 0) {
     const sh = addPathUnix(path)
@@ -17,27 +44,31 @@ export function addPathWindows(path: string): string | undefined {
   }
 }
 
-export function addPathUnix(pathToAdd: string): string | undefined {
+export function addPathUnix(path: string): string | undefined {
   const shell = whichShell()?.shell
   if (!shell) return
 
+  if (isMsys() || process.platform === 'win32') {
+    path = toMsysPath(path)
+  }
+
   let configFile = ''
   let cmd = ''
-  const home = "~"
+  const home = '~'
   switch (shell) {
     case 'fish':
       configFile = `${home}/.config/fish/config.fish`
-      cmd = `echo 'set -gx PATH "${pathToAdd}" $PATH' >> ${configFile}`
+      cmd = `echo 'set -gx PATH "${path}" $PATH' >> ${configFile}`
       break
 
     case 'zsh':
       configFile = `${home}/.zshrc`
-      cmd = `echo 'export PATH="${pathToAdd}:$PATH"' >> ${configFile}`
+      cmd = `echo 'export PATH="${path}:$PATH"' >> ${configFile}`
       break
 
     case 'bash':
       configFile = `${home}/.bashrc`
-      cmd = `echo 'export PATH="${pathToAdd}:$PATH"' >> ${configFile}`
+      cmd = `echo 'export PATH="${path}:$PATH"' >> ${configFile}`
       break
     default:
       return
@@ -64,7 +95,10 @@ export function getPath() {
 }
 
 export function hasPath(path: string) {
-  return getPath().includes(path)
+  if (process.platform === 'win32') {
+    path = toWinPath(path).replaceAll('\\', '/')
+  }
+  return !!getPath().find((i) => i.toLowerCase() === path.toLowerCase())
 }
 
 export const addPath = (path: string) => {
