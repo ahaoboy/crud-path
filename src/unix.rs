@@ -8,51 +8,50 @@ pub fn add_path(path: &str) -> Option<Shell> {
         path
     };
 
+    // By default, bash is used as a fallback
+    let shell = which_shell::which_shell().map_or(Shell::Bash, |i| i.shell);
 
-    if let Some(which_shell::ShellVersion { shell, version: _ }) = which_shell::which_shell() {
-        match shell {
-            which_shell::Shell::Fish => {
-                let cmd = format!(
-                    r#"echo '
+    match shell {
+        which_shell::Shell::Fish => {
+            let cmd = format!(
+                r#"echo '
 set -gx PATH "{path}" $PATH
 ' >> ~/.config/fish/config.fish"#
-                );
-                if exec("fish", ["-c", &cmd]) {
-                    return Some(shell);
-                } else {
-                    return None;
-                }
-            }
-            which_shell::Shell::Zsh => {
-                let cmd = format!(
-                    r#"echo '
-export PATH="{path}:$PATH"
-' >> ~/.zshrc"#
-                );
-                if exec("bash", ["-c", &cmd]) {
-                    return Some(shell);
-                } else {
-                    return None;
-                }
-            }
-            which_shell::Shell::Bash => {
-                let cmd = format!(
-                    r#"echo '
-export PATH="{path}:$PATH"
-' >> ~/.bashrc"#
-                );
-                if exec("bash", ["-c", &cmd]) {
-                    return Some(shell);
-                } else {
-                    return None;
-                }
-            }
-            _ => {
-                return None;
+            );
+            if exec("fish", ["-c", &cmd]) {
+                Some(shell)
+            } else {
+                None
             }
         }
+        which_shell::Shell::Zsh => {
+            let cmd = format!(
+                r#"echo '
+export PATH="{path}:$PATH"
+' >> ~/.zshrc"#
+            );
+            if exec("bash", ["-c", &cmd]) {
+                Some(shell)
+            } else {
+                None
+            }
+        }
+        which_shell::Shell::Bash => {
+            let cmd = format!(
+                r#"echo '
+export PATH="{path}:$PATH"
+' >> ~/.bashrc"#
+            );
+            if exec("bash", ["-c", &cmd]) {
+                Some(shell)
+            } else {
+                None
+            }
+        }
+        _ => {
+            None
+        }
     }
-    None
 }
 #[cfg(test)]
 mod test {

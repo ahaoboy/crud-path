@@ -45,7 +45,8 @@ export function addPathWindows(path: string): string | undefined {
 }
 
 export function addPathUnix(path: string): string | undefined {
-  const shell = whichShell()?.shell
+  // By default, bash is used as a fallback
+  const shell = whichShell()?.shell || 'bash'
   if (!shell) return
 
   if (isMsys() || process.platform === 'win32') {
@@ -96,7 +97,9 @@ export function hasPath(path: string) {
   if (process.platform === 'win32') {
     path = toWinPath(path).replaceAll('\\', '/')
   }
-  return !!getPath().find((i) => i.toLowerCase().replaceAll("\\", '/') === path.toLowerCase())
+  return !!getPath().find((i) =>
+    i.toLowerCase().replaceAll('\\', '/') === path.toLowerCase()
+  )
 }
 
 export const addPath = (path: string) => {
