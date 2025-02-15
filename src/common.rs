@@ -23,7 +23,43 @@ pub fn get_path() -> Vec<String> {
 }
 
 pub fn has_path(path: &str) -> bool {
-    get_path().contains(&path.to_string())
+    #[cfg(windows)]
+    let path = to_win_path(path).replace("\\", "/");
+    get_path()
+        .iter()
+        .any(|i| i.eq_ignore_ascii_case(&path))
+}
+
+// c:/a/b -> C:\a\b
+pub fn to_win_path(path: &str) -> String {
+    let mut path = path.replace("/", "\\");
+    if let Some(s) = path.as_mut_str().get_mut(0..3) {
+        if s.ends_with(":\\") {
+            s.make_ascii_uppercase();
+        }
+    }
+    path
+}
+
+pub fn is_msys() -> bool {
+    std::env::var("MSYSTEM").is_ok()
+}
+
+// C:\a\b -> /c/a/b
+pub fn to_msys_path(path: &str) -> String {
+    let mut path = path.replace("\\", "/");
+    if let Some(s) = path.as_mut_str().get_mut(0..3) {
+        if s.len() == 3 && s.ends_with(":/") {
+            unsafe {
+                let p = s.as_mut_ptr();
+                let name = (*p).to_ascii_lowercase();
+                *p = b'/';
+                *(p.wrapping_add(1)) = name;
+                *(p.wrapping_add(2)) = b'/';
+            };
+        }
+    }
+    path
 }
 
 #[cfg(test)]

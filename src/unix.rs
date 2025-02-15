@@ -1,7 +1,14 @@
-use crate::exec;
+use crate::{exec, is_msys, to_msys_path};
 use which_shell::Shell;
 
 pub fn add_path(path: &str) -> Option<Shell> {
+    let path = if cfg!(windows) || is_msys() {
+        &to_msys_path(path)
+    } else {
+        path
+    };
+
+
     if let Some(which_shell::ShellVersion { shell, version: _ }) = which_shell::which_shell() {
         match shell {
             which_shell::Shell::Fish => {
