@@ -26,6 +26,9 @@ jobs:
       - name: cargo run
         run: |
           cargo run
+      - name: get
+        run: |
+          cargo run
           cargo run -- get
       - name: shell
         run: |

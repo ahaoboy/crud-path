@@ -1,6 +1,6 @@
 [package]
 name = "crud-path"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 resolver = "2"
 license = "MIT"
@@ -11,5 +11,5 @@ authors = ["ahaoboy"]
 
 
 [dependencies]
-is-admin = { version = "^0.1", git = "https://github.com/ahaoboy/is-admin.git" }
-which-shell = { version = "^0.1", git = "https://github.com/ahaoboy/which-shell.git" }
+is-admin = { version = "0.1", git = "https://github.com/ahaoboy/is-admin.git" }
+which-shell = { version = "0.1", git = "https://github.com/ahaoboy/which-shell.git" }
