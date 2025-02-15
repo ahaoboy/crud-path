@@ -1,6 +1,6 @@
 {
   "name": "crud-path",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "crud-path",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
@@ -35,7 +35,7 @@
     "release-alpha": "pnpm publish -r --access public --tag alpha"
   },
   "dependencies": {
-    "which-shell": "^0.1.1"
+    "which-shell": "^0.1.2"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
