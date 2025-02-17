@@ -9,7 +9,11 @@ fn main() {
             }
             "add" => {
                 if let Some(path) = std::env::args().nth(2) {
-                    println!("{:?}", add_path(&path));
+                    if let Some(sh) = add_path(&path) {
+                        println!("add {} to {}", path, sh);
+                    } else {
+                        println!("failed to add {} to $PATH", path);
+                    }
                     return;
                 }
             }

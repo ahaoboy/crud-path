@@ -17,7 +17,12 @@ switch (cmd) {
 
   case 'add': {
     if (args[1]) {
-      console.log(addPath(args[1]))
+      const sh = addPath(args[1])
+      if (sh) {
+        console.log(`add ${args[1]} to ${sh}`)
+      } else {
+        console.log(`failed to add ${args[1]} to $PATH`)
+      }
     }
     break
   }

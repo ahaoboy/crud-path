@@ -1,6 +1,6 @@
 {
   "name": "crud-path",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "crud-path",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
