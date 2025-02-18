@@ -96,6 +96,7 @@ jobs:
           source ~/.bashrc
           export PATH="$PATH:/test/path"
           node -e "console.log(process.env.PATH)"
+          node -e "console.log(process.env.BASH_ENV)"
           node bundle/cli.js get
       - name: has path
         run: |
