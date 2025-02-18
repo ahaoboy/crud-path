@@ -44,11 +44,12 @@ jobs:
           cat ~/.bashrc
       - name: get path
         run: |
-          . ~/.bashrc
+          source ~/.bashrc
+          export PATH="$PATH:/test/path"
           cargo run -- get
       - name: has path
         run: |
-          . ~/.bashrc
+          source ~/.bashrc
           cargo run -- has /a/b/c
           cargo run -- has "c:/b/c"
           cargo run -- has "C:\Windows"
@@ -92,11 +93,13 @@ jobs:
           cat ~/.bashrc
       - name: get path
         run: |
-          . ~/.bashrc
+          source ~/.bashrc
+          export PATH="$PATH:/test/path"
+          node -e "console.log(process.env.PATH)"
           node bundle/cli.js get
       - name: has path
         run: |
-          . ~/.bashrc
+          source ~/.bashrc
           node bundle/cli.js has /a/b/c
           node bundle/cli.js has "c:/b/c"
           node bundle/cli.js has "C:\Windows"
