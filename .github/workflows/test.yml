@@ -45,6 +45,7 @@ jobs:
       - name: get path
         run: |
           source ~/.bashrc
+          echo $GITHUB_ENV
           export PATH="$PATH:/test/path"
           cargo run -- get
       - name: has path
@@ -97,6 +98,7 @@ jobs:
           export PATH="$PATH:/test/path"
           node -e "console.log(process.env.PATH)"
           node -e "console.log(process.env.BASH_ENV)"
+          echo $GITHUB_ENV
           node bundle/cli.js get
       - name: has path
         run: |
