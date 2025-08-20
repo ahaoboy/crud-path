@@ -1,8 +1,9 @@
-use crate::{exec, to_win_path, unix, DELIMITER};
+use crate::{exec, expand_path, to_win_path, unix, DELIMITER};
 use which_shell::Shell;
 
 pub fn add_path(path: &str) -> Option<Shell> {
-    let path_win = to_win_path(path);
+    let abs_path = expand_path(path);
+    let path_win = to_win_path(&abs_path);
     let mode = if is_admin::is_admin() {
         "Machine"
     } else {
@@ -15,10 +16,10 @@ pub fn add_path(path: &str) -> Option<Shell> {
     if exec("powershell", ["-c", &shell]) {
         let mut env_path = std::env::var("PATH").unwrap_or_default();
         env_path.push(DELIMITER);
-        env_path.push_str(path);
+        env_path.push_str(&abs_path);
 
-        std::env::set_var("PATH", env_path);
-        if let Some(sh) = unix::add_path(path) {
+        unsafe { std::env::set_var("PATH", env_path) };
+        if let Some(sh) = unix::add_path(&abs_path) {
             return Some(sh);
         }
         return Some(Shell::PowerShell);

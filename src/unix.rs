@@ -1,4 +1,4 @@
-use crate::{exec, is_msys, to_msys_path};
+use crate::{exec, expand_path, is_msys, to_msys_path};
 use which_shell::Shell;
 
 pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
@@ -48,12 +48,12 @@ export PATH="{path}:$PATH"
 }
 
 pub fn add_path(path: &str) -> Option<Shell> {
+    let path = &expand_path(path);
     // By default, bash is used as a fallback
-    if let Some(shell) = which_shell::which_shell() {
-        if add_path_to_shell(shell.shell, path) {
+    if let Some(shell) = which_shell::which_shell()
+        && add_path_to_shell(shell.shell, path) {
             return Some(shell.shell);
         }
-    }
     if add_path_to_shell(Shell::Bash, path) {
         return Some(Shell::Bash);
     }

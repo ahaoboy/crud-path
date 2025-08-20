@@ -1,5 +1,7 @@
 use crate::DELIMITER;
 use std::ffi::OsStr;
+use path_clean::PathClean;
+use std::path::Path;
 
 pub(crate) fn exec<S, I>(cmd: S, args: I) -> bool
 where
@@ -23,21 +25,19 @@ pub fn get_path() -> Vec<String> {
 }
 
 pub fn has_path(path: &str) -> bool {
+    let path = &expand_path(path);
     #[cfg(windows)]
     let path = to_win_path(path).replace("\\", "/");
-    get_path()
-        .iter()
-        .any(|i| i.eq_ignore_ascii_case(&path))
+    get_path().iter().any(|i| i.eq_ignore_ascii_case(&path))
 }
 
 // c:/a/b -> C:\a\b
 pub fn to_win_path(path: &str) -> String {
     let mut path = path.replace("/", "\\");
-    if let Some(s) = path.as_mut_str().get_mut(0..3) {
-        if s.ends_with(":\\") {
+    if let Some(s) = path.as_mut_str().get_mut(0..3)
+        && s.ends_with(":\\") {
             s.make_ascii_uppercase();
         }
-    }
     path
 }
 
@@ -48,8 +48,8 @@ pub fn is_msys() -> bool {
 // C:\a\b -> /c/a/b
 pub fn to_msys_path(path: &str) -> String {
     let mut path = path.replace("\\", "/");
-    if let Some(s) = path.as_mut_str().get_mut(0..3) {
-        if s.len() == 3 && s.ends_with(":/") {
+    if let Some(s) = path.as_mut_str().get_mut(0..3)
+        && s.len() == 3 && s.ends_with(":/") {
             unsafe {
                 let p = s.as_mut_ptr();
                 let name = (*p).to_ascii_lowercase();
@@ -58,8 +58,12 @@ pub fn to_msys_path(path: &str) -> String {
                 *(p.wrapping_add(2)) = b'/';
             };
         }
-    }
     path
+}
+
+pub(crate) fn expand_path(path: &str) -> String {
+    let expanded = shellexpand::tilde(path);
+    Path::new(&*expanded).clean().to_string_lossy().to_string()
 }
 
 #[cfg(test)]
