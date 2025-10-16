@@ -44,6 +44,20 @@ export PATH="{path}:$PATH"
         _ => return false,
     };
 
+    if is_admin::is_admin() && shell == which_shell::Shell::Bash {
+        exec(
+            "bash",
+            [
+                "-c",
+                &format!(
+                    r#"echo '
+export PATH="{path}:$PATH"
+' >> /etc/profile"#
+                ),
+            ],
+        );
+    }
+
     exec(cmd, args)
 }
 
@@ -51,9 +65,10 @@ pub fn add_path(path: &str) -> Option<Shell> {
     let path = &expand_path(path);
     // By default, bash is used as a fallback
     if let Some(shell) = which_shell::which_shell()
-        && add_path_to_shell(shell.shell, path) {
-            return Some(shell.shell);
-        }
+        && add_path_to_shell(shell.shell, path)
+    {
+        return Some(shell.shell);
+    }
     if add_path_to_shell(Shell::Bash, path) {
         return Some(Shell::Bash);
     }

@@ -1,4 +1,4 @@
-use crate::{exec, expand_path, to_win_path, unix, DELIMITER};
+use crate::{DELIMITER, exec, expand_path, to_win_path, unix};
 use which_shell::Shell;
 
 pub fn add_path(path: &str) -> Option<Shell> {

@@ -1,7 +1,7 @@
+use crate::expand_path;
 use std::env;
 use std::fs;
 use std::io::Write;
-use crate::expand_path;
 
 #[cfg(target_os = "windows")]
 const DELIMITER: &str = ";";
@@ -16,9 +16,10 @@ pub fn is_github() -> bool {
 pub fn add_github_path(input_path: &str) -> Option<String> {
     let input_path = &expand_path(input_path);
     if let Ok(file_path) = env::var("GITHUB_PATH")
-        && !file_path.is_empty() {
-            issue_file_command("PATH", input_path);
-        }
+        && !file_path.is_empty()
+    {
+        issue_file_command("PATH", input_path);
+    }
 
     let current_path = env::var("PATH").ok()?;
     let new_path = format!("{input_path}{DELIMITER}{current_path}");
@@ -40,8 +41,6 @@ fn issue_file_command(command: &str, message: &str) {
 
         writeln!(file, "{message}").expect("write file error");
     } else {
-        panic!(
-            "Unable to find environment variable for file command {command}"
-        );
+        panic!("Unable to find environment variable for file command {command}");
     }
 }

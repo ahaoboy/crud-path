@@ -1,6 +1,6 @@
 use crate::DELIMITER;
-use std::ffi::OsStr;
 use path_clean::PathClean;
+use std::ffi::OsStr;
 use std::path::Path;
 
 pub(crate) fn exec<S, I>(cmd: S, args: I) -> bool
@@ -35,9 +35,10 @@ pub fn has_path(path: &str) -> bool {
 pub fn to_win_path(path: &str) -> String {
     let mut path = path.replace("/", "\\");
     if let Some(s) = path.as_mut_str().get_mut(0..3)
-        && s.ends_with(":\\") {
-            s.make_ascii_uppercase();
-        }
+        && s.ends_with(":\\")
+    {
+        s.make_ascii_uppercase();
+    }
     path
 }
 
@@ -49,15 +50,17 @@ pub fn is_msys() -> bool {
 pub fn to_msys_path(path: &str) -> String {
     let mut path = path.replace("\\", "/");
     if let Some(s) = path.as_mut_str().get_mut(0..3)
-        && s.len() == 3 && s.ends_with(":/") {
-            unsafe {
-                let p = s.as_mut_ptr();
-                let name = (*p).to_ascii_lowercase();
-                *p = b'/';
-                *(p.wrapping_add(1)) = name;
-                *(p.wrapping_add(2)) = b'/';
-            };
-        }
+        && s.len() == 3
+        && s.ends_with(":/")
+    {
+        unsafe {
+            let p = s.as_mut_ptr();
+            let name = (*p).to_ascii_lowercase();
+            *p = b'/';
+            *(p.wrapping_add(1)) = name;
+            *(p.wrapping_add(2)) = b'/';
+        };
+    }
     path
 }
 
