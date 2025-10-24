@@ -44,7 +44,7 @@ export PATH="{path}:$PATH"
         _ => return false,
     };
 
-    if is_admin::is_admin() && shell == which_shell::Shell::Bash {
+    if is_admin::is_admin() {
         exec(
             "bash",
             [
