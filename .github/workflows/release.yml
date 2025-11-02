@@ -10,16 +10,7 @@ defaults:
     shell: bash --noprofile --norc -CeEuo pipefail {0}
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: release-dist-manifest
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@v1
-
-  upload-assets:
-    needs: create-release
+  build:
     strategy:
       matrix:
         include:
