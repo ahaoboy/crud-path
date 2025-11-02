@@ -46,7 +46,7 @@ export PATH="{path}:$PATH"
 
     if is_admin::is_admin() {
         exec(
-            "bash",
+            "sh",
             [
                 "-c",
                 &format!(
