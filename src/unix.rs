@@ -31,7 +31,7 @@ export PATH="{path}:$PATH"
             ],
         ),
         which_shell::Shell::Bash | which_shell::Shell::Sh => (
-            "bash",
+            "sh",
             [
                 "-c",
                 &format!(
