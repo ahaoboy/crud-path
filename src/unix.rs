@@ -13,6 +13,16 @@ fn shell_config(shell: Shell) -> Option<(&'static str, &'static str)> {
     }
 }
 
+/// Check if the content contains the given line.
+/// On Windows/MSYS, comparison is case-insensitive.
+fn config_contains(content: &str, line: &str) -> bool {
+    if cfg!(windows) {
+        content.to_ascii_lowercase().contains(&line.to_ascii_lowercase())
+    } else {
+        content.contains(line)
+    }
+}
+
 pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
     let path = if cfg!(windows) || is_msys() {
         &to_msys_path(path)
@@ -30,7 +40,7 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
     // Check if the export line already exists in the config file
     let config_path = expand_path(config_file);
     if let Ok(content) = std::fs::read_to_string(&config_path)
-        && content.contains(&export_line) {
+        && config_contains(&content, &export_line) {
             eprintln!("{path} is already in {config_file}");
             return true;
         }
@@ -51,7 +61,7 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
         };
         // Only append if not already present
         if let Ok(content) = std::fs::read_to_string("/etc/profile")
-            && content.contains(&admin_export) {
+            && config_contains(&content, &admin_export) {
                 return exec(shell_cmd, ["-c", &cmd_str]);
             }
         exec(
