@@ -29,12 +29,11 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
 
     // Check if the export line already exists in the config file
     let config_path = expand_path(config_file);
-    if let Ok(content) = std::fs::read_to_string(&config_path) {
-        if content.contains(&export_line) {
+    if let Ok(content) = std::fs::read_to_string(&config_path)
+        && content.contains(&export_line) {
             eprintln!("{path} is already in {config_file}");
             return true;
         }
-    }
 
     let cmd_str = format!("echo '\n{export_line}\n' >> {config_file}");
     let shell_cmd = if matches!(shell, Shell::Fish) {
@@ -51,11 +50,10 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
             format!("export PATH=\"{path}:$PATH\"")
         };
         // Only append if not already present
-        if let Ok(content) = std::fs::read_to_string("/etc/profile") {
-            if content.contains(&admin_export) {
+        if let Ok(content) = std::fs::read_to_string("/etc/profile")
+            && content.contains(&admin_export) {
                 return exec(shell_cmd, ["-c", &cmd_str]);
             }
-        }
         exec(
             "sh",
             ["-c", &format!("echo '\n{admin_export}\n' >> /etc/profile")],

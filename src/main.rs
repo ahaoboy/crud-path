@@ -5,7 +5,7 @@ fn main() {
 
     let Some(cmd) = args.get(1) else {
         print_usage();
-        std::process::exit(1);
+        return;
     };
 
     match cmd.as_str() {
