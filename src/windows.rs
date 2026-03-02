@@ -3,6 +3,7 @@ use std::path::Path;
 use crate::{DELIMITER, exec, expand_path, has_path, to_win_path, unix};
 use which_shell::Shell;
 
+#[allow(dead_code)]
 pub fn add_path(path: &str) -> Option<Shell> {
     let abs_path = expand_path(path);
 
