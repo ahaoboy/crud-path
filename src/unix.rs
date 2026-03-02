@@ -86,6 +86,8 @@ pub fn add_path(path: &str) -> Option<Shell> {
     // Warn if the path does not exist, but continue
     if !Path::new(path).exists() {
         eprintln!("Warning: '{path}' does not exist");
+    } else if !Path::new(path).is_dir() {
+        eprintln!("Warning: '{path}' is not a directory");
     }
 
     // Skip if already in PATH
