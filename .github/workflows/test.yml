@@ -37,9 +37,13 @@ jobs:
       - name: shell
         run: |
           cargo run -- shell
-      - name: add path
+      - name: add path (unix)
+        if: runner.os != 'Windows'
         run: |
           cargo run -- add /a/b/c
+      - name: add path (windows)
+        if: runner.os == 'Windows'
+        run: |
           cargo run -- add c:/b/c
       - name: bashrc
         run: |
@@ -52,22 +56,36 @@ jobs:
           echo $GITHUB_ENV
           export PATH="$PATH:/test/path"
           cargo run -- get
-      - name: has path
+      - name: has path (unix)
+        if: runner.os != 'Windows'
         run: |
           source ~/.bashrc
           cargo run -- has /a/b/c
-          cargo run -- has "c:/b/c"
-          cargo run -- has "C:\Windows"
           cargo run -- has /bin
           cargo run -- has /usr/bin
-      - name: github path
+      - name: has path (windows)
+        if: runner.os == 'Windows'
+        run: |
+          source ~/.bashrc
+          cargo run -- has "c:/b/c"
+          cargo run -- has "C:\Windows"
+      - name: github path (unix)
+        if: runner.os != 'Windows'
         run: |
           cargo run -- is_github
           cargo run -- add_github_path /x/y
+      - name: github path (windows)
+        if: runner.os == 'Windows'
+        run: |
+          cargo run -- is_github
           cargo run -- add_github_path c:/x/y
-      - name: test github path
+      - name: test github path (unix)
+        if: runner.os != 'Windows'
         run: |
           cargo run -- has /x/y
+      - name: test github path (windows)
+        if: runner.os == 'Windows'
+        run: |
           cargo run -- has c:/x/y
 
       - name: test home
@@ -102,9 +120,13 @@ jobs:
       - name: shell
         run: |
           node bundle/cli.js shell
-      - name: add path
+      - name: add path (unix)
+        if: runner.os != 'Windows'
         run: |
           node bundle/cli.js add /a/b/c
+      - name: add path (windows)
+        if: runner.os == 'Windows'
+        run: |
           node bundle/cli.js add c:/b/c
       - name: bashrc
         run: |
@@ -119,22 +141,36 @@ jobs:
           node -e "console.log(process.env.BASH_ENV)"
           echo $GITHUB_ENV
           node bundle/cli.js get
-      - name: has path
+      - name: has path (unix)
+        if: runner.os != 'Windows'
         run: |
           source ~/.bashrc
           node bundle/cli.js has /a/b/c
-          node bundle/cli.js has "c:/b/c"
-          node bundle/cli.js has "C:\Windows"
           node bundle/cli.js has /bin
           node bundle/cli.js has /usr/bin
-      - name: github path
+      - name: has path (windows)
+        if: runner.os == 'Windows'
+        run: |
+          source ~/.bashrc
+          node bundle/cli.js has "c:/b/c"
+          node bundle/cli.js has "C:\Windows"
+      - name: github path (unix)
+        if: runner.os != 'Windows'
         run: |
           node bundle/cli.js is_github
           node bundle/cli.js add_github_path /x/y
+      - name: github path (windows)
+        if: runner.os == 'Windows'
+        run: |
+          node bundle/cli.js is_github
           node bundle/cli.js add_github_path c:/x/y
-      - name: test github path
+      - name: test github path (unix)
+        if: runner.os != 'Windows'
         run: |
           node bundle/cli.js has /x/y
+      - name: test github path (windows)
+        if: runner.os == 'Windows'
+        run: |
           node bundle/cli.js has c:/x/y
       # - name: test home
       #   run: |
