@@ -41,7 +41,7 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
     let config_path = expand_path(config_file);
     if let Ok(content) = std::fs::read_to_string(&config_path)
         && config_contains(&content, &export_line) {
-            eprintln!("{path} is already in {config_file}");
+            log::info!("{path} is already in {config_file}");
             return true;
         }
 
@@ -79,15 +79,15 @@ pub fn add_path(path: &str) -> Option<Shell> {
 
     // Validate that the path is absolute
     if !Path::new(path).is_absolute() {
-        eprintln!("Error: '{path}' is not an absolute path");
+        log::error!("'{path}' is not an absolute path");
         return None;
     }
 
     // Warn if the path does not exist, but continue
     if !Path::new(path).exists() {
-        eprintln!("Warning: '{path}' does not exist");
+        log::warn!("'{path}' does not exist");
     } else if !Path::new(path).is_dir() {
-        eprintln!("Warning: '{path}' is not a directory");
+        log::warn!("'{path}' is not a directory");
     }
 
     // Skip if already in PATH

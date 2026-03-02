@@ -10,7 +10,13 @@ homepage = "https://github.com/ahaoboy/crud-path"
 authors = ["ahaoboy"]
 include = ["/src", "/Cargo.toml", "/README.md"]
 
+[features]
+default = ["logging"]
+logging = ["dep:env_logger"]
+
 [dependencies]
+log = "0.4"
+env_logger = { version = "0.11", optional = true }
 is-admin = { version = "0.1", git = "https://github.com/ahaoboy/is-admin.git" }
 which-shell = { version = "0.1", git = "https://github.com/ahaoboy/which-shell.git" }
 shellexpand = "3"

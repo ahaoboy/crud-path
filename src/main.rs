@@ -1,22 +1,27 @@
 use std::path::Path;
 
 use crud_path::{add_github_path, add_path, get_path, has_path, is_github, remove_path};
+use path_clean::PathClean;
 
 /// Resolve a path: expand `~` via shellexpand, then convert relative paths to absolute.
 fn resolve_path(path: &str) -> String {
     let expanded = shellexpand::tilde(path).to_string();
     let p = Path::new(&expanded);
     if p.is_absolute() {
-        expanded
+        p.clean().to_string_lossy().to_string()
     } else {
         match std::env::current_dir() {
-            Ok(cwd) => cwd.join(p).to_string_lossy().to_string(),
+            Ok(cwd) => cwd.join(p).clean().to_string_lossy().to_string(),
             Err(_) => expanded,
         }
     }
 }
 
 fn main() {
+    #[cfg(feature = "logging")]
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .init();
+
     let args: Vec<String> = std::env::args().collect();
 
     let Some(cmd) = args.get(1) else {

@@ -14,7 +14,7 @@ pub fn add_github_path(input_path: &str) -> Option<String> {
         && !file_path.is_empty()
         && let Err(e) = issue_file_command("PATH", &input_path)
     {
-        eprintln!("Warning: failed to write to GITHUB_PATH file: {e}");
+        log::warn!("failed to write to GITHUB_PATH file: {e}");
     }
 
     let current_path = env::var("PATH").unwrap_or_default();

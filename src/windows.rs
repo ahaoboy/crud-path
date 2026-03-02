@@ -9,20 +9,20 @@ pub fn add_path(path: &str) -> Option<Shell> {
 
     // Validate that the path is absolute
     if !Path::new(&abs_path).is_absolute() {
-        eprintln!("Error: '{abs_path}' is not an absolute path");
+        log::error!("'{abs_path}' is not an absolute path");
         return None;
     }
 
     // Warn if the path does not exist, but continue
     if !Path::new(&abs_path).exists() {
-        eprintln!("Warning: '{abs_path}' does not exist");
+        log::warn!("'{abs_path}' does not exist");
     } else if !Path::new(&abs_path).is_dir() {
-        eprintln!("Warning: '{abs_path}' is not a directory");
+        log::warn!("'{abs_path}' is not a directory");
     }
 
     // Skip if already in PATH
     if has_path(&abs_path) {
-        eprintln!("{abs_path} is already in PATH");
+        log::info!("{abs_path} is already in PATH");
         return None;
     }
 
