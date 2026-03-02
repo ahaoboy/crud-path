@@ -3,44 +3,41 @@ use std::env;
 use std::fs;
 use std::io::Write;
 
-#[cfg(target_os = "windows")]
-const DELIMITER: &str = ";";
-
-#[cfg(not(target_os = "windows"))]
-const DELIMITER: &str = ":";
-
 pub fn is_github() -> bool {
-    std::env::var("GITHUB_ACTIONS") == Ok("true".to_string())
+    env::var("GITHUB_ACTIONS").as_deref() == Ok("true")
 }
 
 pub fn add_github_path(input_path: &str) -> Option<String> {
-    let input_path = &expand_path(input_path);
+    let input_path = expand_path(input_path);
+
     if let Ok(file_path) = env::var("GITHUB_PATH")
         && !file_path.is_empty()
+        && let Err(e) = issue_file_command("PATH", &input_path)
     {
-        issue_file_command("PATH", input_path);
+        eprintln!("Warning: failed to write to GITHUB_PATH file: {e}");
     }
 
-    let current_path = env::var("PATH").ok()?;
-    let new_path = format!("{input_path}{DELIMITER}{current_path}");
+    let current_path = env::var("PATH").unwrap_or_default();
+    let delimiter = crate::DELIMITER;
+    let new_path = format!("{input_path}{delimiter}{current_path}");
+    // Safety: env mutation is not thread-safe, but this CLI is single-threaded.
     unsafe { env::set_var("PATH", &new_path) };
     Some(new_path)
 }
 
-fn issue_file_command(command: &str, message: &str) {
+fn issue_file_command(command: &str, message: &str) -> Result<(), String> {
     let env_var_name = format!("GITHUB_{command}");
-    if let Ok(file_path) = env::var(&env_var_name) {
-        if fs::metadata(&file_path).is_err() {
-            panic!("Missing file at path: {file_path}");
-        }
+    let file_path = env::var(&env_var_name)
+        .map_err(|_| format!("Missing environment variable: {env_var_name}"))?;
 
-        let mut file = fs::OpenOptions::new()
-            .append(true)
-            .open(&file_path)
-            .expect("Failed to open file");
-
-        writeln!(file, "{message}").expect("write file error");
-    } else {
-        panic!("Unable to find environment variable for file command {command}");
+    if !std::path::Path::new(&file_path).exists() {
+        return Err(format!("Missing file at path: {file_path}"));
     }
+
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&file_path)
+        .map_err(|e| format!("Failed to open {file_path}: {e}"))?;
+
+    writeln!(file, "{message}").map_err(|e| format!("Failed to write to {file_path}: {e}"))
 }

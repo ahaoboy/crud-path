@@ -1,5 +1,17 @@
-use crate::{exec, expand_path, is_msys, to_msys_path};
+use std::path::Path;
+
+use crate::{exec, expand_path, has_path, is_msys, to_msys_path};
 use which_shell::Shell;
+
+/// Returns the shell config file path and export syntax for the given shell.
+fn shell_config(shell: Shell) -> Option<(&'static str, &'static str)> {
+    match shell {
+        Shell::Fish => Some(("~/.config/fish/config.fish", "set -gx PATH \"{}\" $PATH")),
+        Shell::Zsh => Some(("~/.zshrc", "export PATH=\"{}:$PATH\"")),
+        Shell::Bash | Shell::Sh => Some(("~/.bashrc", "export PATH=\"{}:$PATH\"")),
+        _ => None,
+    }
+}
 
 pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
     let path = if cfg!(windows) || is_msys() {
@@ -7,63 +19,73 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
     } else {
         path
     };
-    let (cmd, args) = match shell {
-        which_shell::Shell::Fish => (
-            "fish",
-            [
-                "-c",
-                &format!(
-                    r#"echo '
-set -gx PATH "{path}" $PATH
-' >> ~/.config/fish/config.fish"#
-                ),
-            ],
-        ),
-        which_shell::Shell::Zsh => (
-            "bash",
-            [
-                "-c",
-                &format!(
-                    r#"echo '
-export PATH="{path}:$PATH"
-' >> ~/.zshrc"#
-                ),
-            ],
-        ),
-        which_shell::Shell::Bash | which_shell::Shell::Sh => (
-            "sh",
-            [
-                "-c",
-                &format!(
-                    r#"echo '
-export PATH="{path}:$PATH"
-' >> ~/.bashrc"#
-                ),
-            ],
-        ),
-        _ => return false,
+
+    let (config_file, template) = match shell_config(shell) {
+        Some(c) => c,
+        None => return false,
+    };
+
+    let export_line = template.replace("{}", path);
+
+    // Check if the export line already exists in the config file
+    let config_path = expand_path(config_file);
+    if let Ok(content) = std::fs::read_to_string(&config_path) {
+        if content.contains(&export_line) {
+            eprintln!("{path} is already in {config_file}");
+            return true;
+        }
+    }
+
+    let cmd_str = format!("echo '\n{export_line}\n' >> {config_file}");
+    let shell_cmd = if matches!(shell, Shell::Fish) {
+        "fish"
+    } else {
+        "sh"
     };
 
     if is_admin::is_admin() {
+        // For admin, also write to /etc/profile using the appropriate syntax
+        let admin_export = if matches!(shell, Shell::Fish) {
+            format!("set -gx PATH \"{path}\" $PATH")
+        } else {
+            format!("export PATH=\"{path}:$PATH\"")
+        };
+        // Only append if not already present
+        if let Ok(content) = std::fs::read_to_string("/etc/profile") {
+            if content.contains(&admin_export) {
+                return exec(shell_cmd, ["-c", &cmd_str]);
+            }
+        }
         exec(
             "sh",
-            [
-                "-c",
-                &format!(
-                    r#"echo '
-export PATH="{path}:$PATH"
-' >> /etc/profile"#
-                ),
-            ],
+            ["-c", &format!("echo '\n{admin_export}\n' >> /etc/profile")],
         );
     }
 
-    exec(cmd, args)
+    exec(shell_cmd, ["-c", &cmd_str])
 }
 
+#[allow(dead_code)]
 pub fn add_path(path: &str) -> Option<Shell> {
     let path = &expand_path(path);
-    // By default, bash is used as a fallback
+
+    // Validate that the path is absolute
+    if !Path::new(path).is_absolute() {
+        eprintln!("Error: '{path}' is not an absolute path");
+        return None;
+    }
+
+    // Warn if the path does not exist, but continue
+    if !Path::new(path).exists() {
+        eprintln!("Warning: '{path}' does not exist");
+    }
+
+    // Skip if already in PATH
+    if has_path(path) {
+        return None;
+    }
+
+    // Try the detected shell first, fall back to bash
     if let Some(shell) = which_shell::which_shell()
         && add_path_to_shell(shell.shell, path)
     {
