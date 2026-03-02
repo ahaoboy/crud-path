@@ -10,6 +10,7 @@ cargo binstall crud-path
 
 crud-path get
 crud-path add /a/b/c
+crud-path remove /a/b/c
 source ~/.bashrc
 crud-path has /a/b/c
 crud-path is_github
@@ -42,4 +43,14 @@ npm i crud-path -g
   - On Windows: Uses PowerShell to modify the `PATH` variable.
   - On Unix-like systems: Updates the corresponding shell configuration file
     based on the terminal in use.
+- **Note:** Changes may require restarting the terminal to take effect.
+
+### 4. `remove_path`
+
+- **Description:** Removes a specified path from the `PATH` variable.
+  - On Windows: Uses PowerShell to remove the entry from the registry `PATH`.
+  - On Unix-like systems: Removes the corresponding export line from the shell
+    configuration file.
+- **Returns:** If the path is not in `PATH`, prints a message indicating it was
+  not found. If removal succeeds, prints a success message.
 - **Note:** Changes may require restarting the terminal to take effect.

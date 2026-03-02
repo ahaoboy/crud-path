@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{exec, expand_path, has_path, is_msys, to_msys_path};
+use crate::{exec, expand_path, has_path, is_msys, remove_from_env_path, to_msys_path};
 use which_shell::Shell;
 
 /// Returns the shell config file path and export syntax for the given shell.
@@ -103,6 +103,62 @@ pub fn add_path(path: &str) -> Option<Shell> {
         return Some(Shell::Bash);
     }
     None
+}
+
+pub fn remove_path_from_shell(shell: Shell, path: &str) -> bool {
+    let path = if cfg!(windows) || is_msys() {
+        &to_msys_path(path)
+    } else {
+        path
+    };
+
+    let (config_file, template) = match shell_config(shell) {
+        Some(c) => c,
+        None => return false,
+    };
+
+    let export_line = template.replace("{}", path);
+    let config_path = expand_path(config_file);
+
+    if let Ok(content) = std::fs::read_to_string(&config_path)
+        && config_contains(&content, &export_line) {
+            let new_content = content
+                .lines()
+                .filter(|line| {
+                    if cfg!(windows) {
+                        !line.trim().eq_ignore_ascii_case(export_line.trim())
+                    } else {
+                        line.trim() != export_line.trim()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            if std::fs::write(&config_path, new_content).is_ok() {
+                return true;
+            }
+        }
+    false
+}
+
+#[allow(dead_code)]
+pub fn remove_path(path: &str) -> bool {
+    let path = &expand_path(path);
+
+    if !has_path(path) {
+        return false;
+    }
+
+    remove_from_env_path(path);
+
+    // Try to remove from all known shell configs
+    if let Some(shell) = which_shell::which_shell() {
+        remove_path_from_shell(shell.shell, path);
+    }
+    remove_path_from_shell(Shell::Bash, path);
+    remove_path_from_shell(Shell::Zsh, path);
+    remove_path_from_shell(Shell::Fish, path);
+
+    true
 }
 
 #[cfg(test)]

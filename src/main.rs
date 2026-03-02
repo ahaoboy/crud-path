@@ -1,4 +1,4 @@
-use crud_path::{add_github_path, add_path, get_path, has_path, is_github};
+use crud_path::{add_github_path, add_path, get_path, has_path, is_github, remove_path};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -23,6 +23,18 @@ fn main() {
             } else if !has_path(path) {
                 eprintln!("failed to add {path} to $PATH");
                 std::process::exit(1);
+            }
+        }
+        "remove" => {
+            let Some(path) = args.get(2) else {
+                eprintln!("Error: 'remove' requires a PATH argument");
+                eprintln!("Usage: crud-path remove <PATH>");
+                std::process::exit(1);
+            };
+            if remove_path(path) {
+                println!("removed {path} from PATH");
+            } else {
+                println!("{path} is not in PATH");
             }
         }
         "has" => {
@@ -73,6 +85,7 @@ fn print_usage() {
     eprintln!("  get              List all entries in PATH");
     eprintln!("  has <PATH>       Check if PATH contains an entry");
     eprintln!("  add <PATH>       Add an entry to PATH");
+    eprintln!("  remove <PATH>    Remove an entry from PATH");
     eprintln!("  shell            Show detected shell");
     eprintln!("  is_github        Check if running in GitHub Actions");
     eprintln!("  add_github_path  Add an entry to GitHub Actions PATH");

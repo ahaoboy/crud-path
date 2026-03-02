@@ -30,12 +30,41 @@ pub fn has_path(path: &str) -> bool {
         .any(|entry| normalize_for_comparison(entry) == path)
 }
 
+/// Remove a path from the current process PATH environment variable.
+pub(crate) fn remove_from_env_path(path: &str) {
+    let target = normalize_for_comparison(path);
+    let entries: Vec<String> = std::env::var("PATH")
+        .unwrap_or_default()
+        .split(DELIMITER)
+        .filter(|s| !s.is_empty())
+        .filter(|entry| normalize_for_comparison(entry) != target)
+        .map(|s| s.to_string())
+        .collect();
+    let new_path = entries.join(&DELIMITER.to_string());
+    // Safety: env mutation is not thread-safe, but this CLI is single-threaded.
+    unsafe { std::env::set_var("PATH", new_path) };
+}
+
 /// Normalize a path for comparison.
 /// On Windows, paths are case-insensitive, so we lowercase.
 /// On Unix, paths are case-sensitive, so we return as-is.
-/// Always normalizes slashes to forward slashes.
+/// Always normalizes slashes to forward slashes and trims trailing separators.
+/// On Windows, also converts MSYS2-style paths (e.g., /c/Users) to c:/Users.
 fn normalize_for_comparison(path: &str) -> String {
     let normalized = path.replace("\\", "/");
+    let normalized = normalized.trim_end_matches('/');
+    // Convert MSYS2-style drive paths: /c/... -> c:/...
+    let normalized = if cfg!(windows)
+        && normalized.len() >= 2
+        && normalized.starts_with('/')
+        && normalized.as_bytes()[1].is_ascii_alphabetic()
+        && (normalized.len() == 2 || normalized.as_bytes()[2] == b'/')
+    {
+        let drive = normalized.as_bytes()[1] as char;
+        format!("{}:{}", drive, &normalized[2..])
+    } else {
+        normalized.to_string()
+    };
     if cfg!(windows) {
         normalized.to_ascii_lowercase()
     } else {
@@ -110,6 +139,24 @@ mod test {
             assert_eq!(a, b);
         } else {
             assert_ne!(a, b);
+        }
+    }
+
+    #[test]
+    fn test_normalize_trailing_separator() {
+        let a = normalize_for_comparison("C:\\Users\\Test\\");
+        let b = normalize_for_comparison("C:\\Users\\Test");
+        if cfg!(windows) {
+            assert_eq!(a, b);
+        }
+    }
+
+    #[test]
+    fn test_normalize_msys_path() {
+        let a = normalize_for_comparison("/c/Users/Test");
+        let b = normalize_for_comparison("C:\\Users\\Test");
+        if cfg!(windows) {
+            assert_eq!(a, b);
         }
     }
 }
