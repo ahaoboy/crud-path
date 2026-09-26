@@ -34,15 +34,25 @@ fn main() {
             println!("{:?}", which_shell::which_shell());
         }
         "add" => {
-            let Some(input) = args.get(2) else {
+            // Parse optional `-f`/`--force` flag and the PATH argument in any order.
+            let mut force = false;
+            let mut input = None;
+            for arg in &args[2..] {
+                match arg.as_str() {
+                    "-f" | "--force" => force = true,
+                    other if input.is_none() => input = Some(other),
+                    _ => {}
+                }
+            }
+            let Some(input) = input else {
                 eprintln!("Error: 'add' requires a PATH argument");
-                eprintln!("Usage: crud-path add <PATH>");
+                eprintln!("Usage: crud-path add [-f] <PATH>");
                 std::process::exit(1);
             };
             let path = resolve_path(input);
-            if let Some(sh) = add_path(&path) {
+            if let Some(sh) = add_path(&path, force) {
                 println!("add {path} to {sh}");
-            } else if !has_path(&path) {
+            } else if !force && !has_path(&path) {
                 eprintln!("failed to add {path} to $PATH");
                 std::process::exit(1);
             }
@@ -110,6 +120,7 @@ fn print_usage() {
     eprintln!("  get              List all entries in PATH");
     eprintln!("  has <PATH>       Check if PATH contains an entry");
     eprintln!("  add <PATH>       Add an entry to PATH");
+    eprintln!("  add -f <PATH>    Force add an entry to PATH (skip existence check)");
     eprintln!("  remove <PATH>    Remove an entry from PATH");
     eprintln!("  shell            Show detected shell");
     eprintln!("  is_github        Check if running in GitHub Actions");

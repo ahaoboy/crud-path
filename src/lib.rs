@@ -29,13 +29,13 @@ mod test {
         #[cfg(not(target_os = "windows"))]
         let path = "/test_crud_path_abcd";
 
-        add_path(path);
+        add_path(path, false);
         assert!(has_path(path));
     }
 
     #[test]
     fn test_add_relative_path_returns_none() {
-        let result = add_path("relative_path");
+        let result = add_path("relative_path", false);
         assert!(result.is_none());
     }
 }

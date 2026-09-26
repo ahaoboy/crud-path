@@ -4,7 +4,7 @@ use crate::{DELIMITER, exec, expand_path, has_path, remove_from_env_path, to_win
 use which_shell::Shell;
 
 #[allow(dead_code)]
-pub fn add_path(path: &str) -> Option<Shell> {
+pub fn add_path(path: &str, force: bool) -> Option<Shell> {
     let abs_path = expand_path(path);
 
     // Validate that the path is absolute
@@ -20,8 +20,8 @@ pub fn add_path(path: &str) -> Option<Shell> {
         log::warn!("'{abs_path}' is not a directory");
     }
 
-    // Skip if already in PATH
-    if has_path(&abs_path) {
+    // Skip if already in PATH (unless forced)
+    if !force && has_path(&abs_path) {
         log::info!("{abs_path} is already in PATH");
         return None;
     }
@@ -119,7 +119,7 @@ mod test {
     #[test]
     fn test_add_path() {
         let s = "c:/xxx";
-        let s = add_path(s);
+        let s = add_path(s, false);
         assert!(s.is_some());
     }
 }

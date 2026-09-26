@@ -6,7 +6,6 @@ resolver = "2"
 license = "MIT"
 description = "crud-path"
 repository = "https://github.com/ahaoboy/crud-path"
-homepage = "https://github.com/ahaoboy/crud-path"
 authors = ["ahaoboy"]
 include = ["/src", "/Cargo.toml", "/README.md"]
 

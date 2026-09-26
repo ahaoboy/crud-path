@@ -74,7 +74,7 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn add_path(path: &str) -> Option<Shell> {
+pub fn add_path(path: &str, force: bool) -> Option<Shell> {
     let path = &expand_path(path);
 
     // Validate that the path is absolute
@@ -90,8 +90,8 @@ pub fn add_path(path: &str) -> Option<Shell> {
         log::warn!("'{path}' is not a directory");
     }
 
-    // Skip if already in PATH
-    if has_path(path) {
+    // Skip if already in PATH (unless forced)
+    if !force && has_path(path) {
         return None;
     }
 
@@ -170,7 +170,7 @@ mod test {
     #[test]
     fn test_add_path() {
         let s = "/xxx";
-        let s = add_path(s);
+        let s = add_path(s, false);
         assert!(s.is_some());
     }
 }
