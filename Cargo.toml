@@ -1,6 +1,6 @@
 [package]
 name = "crud-path"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2024"
 resolver = "2"
 license = "MIT"
