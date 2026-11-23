@@ -1,6 +1,8 @@
 use std::path::Path;
 
-use crate::{DELIMITER, exec, expand_path, has_path, remove_from_env_path, to_win_path, unix};
+use crate::{
+    DELIMITER, exec, exec_output, expand_path, has_path, remove_from_env_path, to_win_path, unix,
+};
 use which_shell::Shell;
 
 #[allow(dead_code)]
@@ -51,15 +53,73 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
         // Also add to shell config (bash/zsh/fish) for MSYS2/Git Bash.
         // Call add_path_to_shell directly to avoid duplicate validation.
         if let Some(shell) = which_shell::which_shell()
-            && unix::add_path_to_shell(shell.shell, &abs_path) {
-                return Some(shell.shell);
-            }
+            && unix::add_path_to_shell(shell.shell, &abs_path)
+        {
+            return Some(shell.shell);
+        }
         if unix::add_path_to_shell(Shell::Bash, &abs_path) {
             return Some(Shell::Bash);
         }
         return Some(Shell::PowerShell);
     }
     None
+}
+
+/// Add `path` to the config file of `shell`.
+///
+/// Windows has no single login shell: PowerShell keeps `PATH` in a profile
+/// script (resolved with `$PROFILE`, so OneDrive-redirected Documents work),
+/// while MSYS2/Git Bash shells use the same files as on Unix.
+pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
+    match shell {
+        Shell::PowerShell | Shell::Pwsh => add_to_powershell_profile(shell, path),
+        _ => unix::add_path_to_shell(shell, path),
+    }
+}
+
+fn add_to_powershell_profile(shell: Shell, path: &str) -> bool {
+    let program = if matches!(shell, Shell::Pwsh) {
+        "pwsh"
+    } else {
+        "powershell"
+    };
+    let Some(profile) = exec_output(program, ["-NoProfile", "-Command", "$PROFILE"]) else {
+        log::error!("'{program}' is not available; cannot locate its profile");
+        return false;
+    };
+    if profile.is_empty() {
+        log::error!("'{program}' did not report a profile path");
+        return false;
+    }
+    let Some(line) = shell.path_line(path) else {
+        return false;
+    };
+    append_line_once(Path::new(&profile), &line)
+}
+
+/// Append `line` to `file` unless it is already there.
+fn append_line_once(file: &Path, line: &str) -> bool {
+    use std::io::Write;
+
+    let existing = std::fs::read_to_string(file).unwrap_or_default();
+    if existing.lines().any(|current| current.trim() == line) {
+        log::info!("{line} is already in {}", file.display());
+        return true;
+    }
+    if let Some(parent) = file.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(file)
+    {
+        Ok(mut handle) => writeln!(handle, "{line}").is_ok(),
+        Err(e) => {
+            log::error!("failed to write {}: {e}", file.display());
+            false
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -121,5 +181,27 @@ mod test {
         let s = "c:/xxx";
         let s = add_path(s, false);
         assert!(s.is_some());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The profile line must be written once, however often the install runs.
+    #[test]
+    fn append_line_once_is_idempotent() {
+        let dir = std::env::temp_dir().join(format!("crud-path-profile-{}", std::process::id()));
+        let file = dir.join("Microsoft.PowerShell_profile.ps1");
+        let line = r#"$env:Path += [IO.Path]::PathSeparator + "C:/x""#;
+
+        assert!(append_line_once(&file, line));
+        assert!(append_line_once(&file, line));
+
+        let text = std::fs::read_to_string(&file).unwrap();
+        assert_eq!(text.lines().count(), 1, "{text}");
+        assert_eq!(text.trim(), line);
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -15,6 +15,23 @@ where
         .is_ok()
 }
 
+/// Run `cmd` and return its trimmed stdout, or `None` when it cannot run.
+pub(crate) fn exec_output<S, I>(cmd: S, args: I) -> Option<String>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let output = std::process::Command::new(cmd)
+        .envs(std::env::vars())
+        .args(args)
+        .output()
+        .ok()?;
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
 pub fn get_path() -> Vec<String> {
     let path = std::env::var("PATH").unwrap_or_default();
     path.split(DELIMITER)
@@ -93,7 +110,10 @@ pub fn is_msys() -> bool {
 /// e.g. `C:\a\b` -> `/c/a/b`
 pub fn to_msys_path(path: &str) -> String {
     let path = path.replace("\\", "/");
-    if path.len() >= 3 && path.as_bytes().get(1) == Some(&b':') && path.as_bytes().get(2) == Some(&b'/') {
+    if path.len() >= 3
+        && path.as_bytes().get(1) == Some(&b':')
+        && path.as_bytes().get(2) == Some(&b'/')
+    {
         let drive = path.as_bytes()[0].to_ascii_lowercase() as char;
         format!("/{drive}{}", &path[2..])
     } else {
