@@ -1,7 +1,8 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{
-    DELIMITER, exec, exec_output, expand_path, has_path, remove_from_env_path, to_win_path, unix,
+    DELIMITER, append_line_once, exec, exec_output, expand_path, has_path, remove_from_env_path,
+    to_win_path, unix,
 };
 use which_shell::Shell;
 
@@ -53,11 +54,11 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
         // Also add to shell config (bash/zsh/fish) for MSYS2/Git Bash.
         // Call add_path_to_shell directly to avoid duplicate validation.
         if let Some(shell) = which_shell::which_shell()
-            && unix::add_path_to_shell(shell.shell, &abs_path)
+            && unix::add_path_to_shell(shell.shell, &abs_path).is_some()
         {
             return Some(shell.shell);
         }
-        if unix::add_path_to_shell(Shell::Bash, &abs_path) {
+        if unix::add_path_to_shell(Shell::Bash, &abs_path).is_some() {
             return Some(Shell::Bash);
         }
         return Some(Shell::PowerShell);
@@ -69,57 +70,29 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
 ///
 /// Windows has no single login shell: PowerShell keeps `PATH` in a profile
 /// script (resolved with `$PROFILE`, so OneDrive-redirected Documents work),
-/// while MSYS2/Git Bash shells use the same files as on Unix.
-pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
+/// while MSYS2/Git Bash and the other shells use the same files as on Unix.
+/// Returns the file that was updated.
+pub fn add_path_to_shell(shell: Shell, path: &str) -> Option<PathBuf> {
     match shell {
         Shell::PowerShell | Shell::Pwsh => add_to_powershell_profile(shell, path),
         _ => unix::add_path_to_shell(shell, path),
     }
 }
 
-fn add_to_powershell_profile(shell: Shell, path: &str) -> bool {
+fn add_to_powershell_profile(shell: Shell, path: &str) -> Option<PathBuf> {
     let program = if matches!(shell, Shell::Pwsh) {
         "pwsh"
     } else {
         "powershell"
     };
-    let Some(profile) = exec_output(program, ["-NoProfile", "-Command", "$PROFILE"]) else {
-        log::error!("'{program}' is not available; cannot locate its profile");
-        return false;
-    };
+    let profile = exec_output(program, ["-NoProfile", "-Command", "$PROFILE"])?;
     if profile.is_empty() {
         log::error!("'{program}' did not report a profile path");
-        return false;
+        return None;
     }
-    let Some(line) = shell.path_line(path) else {
-        return false;
-    };
-    append_line_once(Path::new(&profile), &line)
-}
-
-/// Append `line` to `file` unless it is already there.
-fn append_line_once(file: &Path, line: &str) -> bool {
-    use std::io::Write;
-
-    let existing = std::fs::read_to_string(file).unwrap_or_default();
-    if existing.lines().any(|current| current.trim() == line) {
-        log::info!("{line} is already in {}", file.display());
-        return true;
-    }
-    if let Some(parent) = file.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    match std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(file)
-    {
-        Ok(mut handle) => writeln!(handle, "{line}").is_ok(),
-        Err(e) => {
-            log::error!("failed to write {}: {e}", file.display());
-            false
-        }
-    }
+    let line = shell.path_line(path)?;
+    let file = PathBuf::from(profile);
+    append_line_once(&file, &line).then_some(file)
 }
 
 #[allow(dead_code)]

@@ -32,6 +32,44 @@ where
         .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
+/// Whether `content` already contains `line`.
+///
+/// On Windows/MSYS, comparison is case-insensitive.
+pub(crate) fn config_contains(content: &str, line: &str) -> bool {
+    if cfg!(windows) {
+        content
+            .to_ascii_lowercase()
+            .contains(&line.to_ascii_lowercase())
+    } else {
+        content.contains(line)
+    }
+}
+
+/// Append `line` to `file` unless it is already there.
+pub(crate) fn append_line_once(file: &Path, line: &str) -> bool {
+    use std::io::Write;
+
+    let existing = std::fs::read_to_string(file).unwrap_or_default();
+    if config_contains(&existing, line) {
+        log::info!("{line} is already in {}", file.display());
+        return true;
+    }
+    if let Some(parent) = file.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(file)
+    {
+        Ok(mut handle) => writeln!(handle, "{line}").is_ok(),
+        Err(e) => {
+            log::error!("failed to write {}: {e}", file.display());
+            false
+        }
+    }
+}
+
 pub fn get_path() -> Vec<String> {
     let path = std::env::var("PATH").unwrap_or_default();
     path.split(DELIMITER)

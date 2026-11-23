@@ -1,76 +1,42 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::{exec, expand_path, has_path, is_msys, remove_from_env_path, to_msys_path};
+use crate::{
+    append_line_once, config_contains, expand_path, has_path, is_msys, remove_from_env_path,
+    to_msys_path,
+};
 use which_shell::Shell;
 
-/// Returns the shell config file path and export syntax for the given shell.
-fn shell_config(shell: Shell) -> Option<(&'static str, &'static str)> {
-    match shell {
-        Shell::Fish => Some(("~/.config/fish/config.fish", "set -gx PATH \"{}\" $PATH")),
-        Shell::Zsh => Some(("~/.zshrc", "export PATH=\"{}:$PATH\"")),
-        Shell::Bash | Shell::Sh => Some(("~/.bashrc", "export PATH=\"{}:$PATH\"")),
-        _ => None,
-    }
+/// Absolute path of `shell`'s config file, when this crate can edit it.
+pub fn config_file(shell: Shell) -> Option<PathBuf> {
+    shell
+        .path_config()
+        .map(|config| PathBuf::from(expand_path(&format!("~/{}", config.file))))
 }
 
-/// Check if the content contains the given line.
-/// On Windows/MSYS, comparison is case-insensitive.
-fn config_contains(content: &str, line: &str) -> bool {
-    if cfg!(windows) {
-        content.to_ascii_lowercase().contains(&line.to_ascii_lowercase())
-    } else {
-        content.contains(line)
-    }
-}
-
-pub fn add_path_to_shell(shell: Shell, path: &str) -> bool {
+/// Append `path` to `shell`'s config file.
+///
+/// Returns the file that was (or already had been) updated, so callers can
+/// show the user exactly where the entry went.
+pub fn add_path_to_shell(shell: Shell, path: &str) -> Option<PathBuf> {
     let path = if cfg!(windows) || is_msys() {
-        &to_msys_path(path)
+        to_msys_path(path)
     } else {
-        path
+        path.to_string()
     };
+    let line = shell.path_line(&path)?;
+    let file = config_file(shell)?;
 
-    let (config_file, template) = match shell_config(shell) {
-        Some(c) => c,
-        None => return false,
-    };
-
-    let export_line = template.replace("{}", path);
-
-    // Check if the export line already exists in the config file
-    let config_path = expand_path(config_file);
-    if let Ok(content) = std::fs::read_to_string(&config_path)
-        && config_contains(&content, &export_line) {
-            log::info!("{path} is already in {config_file}");
-            return true;
-        }
-
-    let cmd_str = format!("echo '\n{export_line}\n' >> {config_file}");
-    let shell_cmd = if matches!(shell, Shell::Fish) {
-        "fish"
-    } else {
-        "sh"
-    };
-
-    if is_admin::is_admin() {
-        // For admin, also write to /etc/profile using the appropriate syntax
-        let admin_export = if matches!(shell, Shell::Fish) {
-            format!("set -gx PATH \"{path}\" $PATH")
-        } else {
-            format!("export PATH=\"{path}:$PATH\"")
-        };
-        // Only append if not already present
-        if let Ok(content) = std::fs::read_to_string("/etc/profile")
-            && config_contains(&content, &admin_export) {
-                return exec(shell_cmd, ["-c", &cmd_str]);
-            }
-        exec(
-            "sh",
-            ["-c", &format!("echo '\n{admin_export}\n' >> /etc/profile")],
-        );
+    if !append_line_once(&file, &line) {
+        return None;
     }
 
-    exec(shell_cmd, ["-c", &cmd_str])
+    // Running as root: make it available to every user as well.
+    #[cfg(not(windows))]
+    if is_admin::is_admin() {
+        let _ = append_line_once(Path::new("/etc/profile"), &line);
+    }
+
+    Some(file)
 }
 
 #[allow(dead_code)]
@@ -97,11 +63,11 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
 
     // Try the detected shell first, fall back to bash
     if let Some(shell) = which_shell::which_shell()
-        && add_path_to_shell(shell.shell, path)
+        && add_path_to_shell(shell.shell, path).is_some()
     {
         return Some(shell.shell);
     }
-    if add_path_to_shell(Shell::Bash, path) {
+    if add_path_to_shell(Shell::Bash, path).is_some() {
         return Some(Shell::Bash);
     }
     None
@@ -109,36 +75,30 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
 
 pub fn remove_path_from_shell(shell: Shell, path: &str) -> bool {
     let path = if cfg!(windows) || is_msys() {
-        &to_msys_path(path)
+        to_msys_path(path)
     } else {
-        path
+        path.to_string()
     };
 
-    let (config_file, template) = match shell_config(shell) {
-        Some(c) => c,
-        None => return false,
+    let Some(export_line) = shell.path_line(&path) else {
+        return false;
     };
-
-    let export_line = template.replace("{}", path);
-    let config_path = expand_path(config_file);
+    let Some(config_path) = config_file(shell) else {
+        return false;
+    };
 
     if let Ok(content) = std::fs::read_to_string(&config_path)
-        && config_contains(&content, &export_line) {
-            let new_content = content
-                .lines()
-                .filter(|line| {
-                    if cfg!(windows) {
-                        !line.trim().eq_ignore_ascii_case(export_line.trim())
-                    } else {
-                        line.trim() != export_line.trim()
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
-            if std::fs::write(&config_path, new_content).is_ok() {
-                return true;
-            }
+        && config_contains(&content, &export_line)
+    {
+        let new_content = content
+            .lines()
+            .filter(|line| !config_contains(line, &export_line))
+            .collect::<Vec<_>>()
+            .join("\n");
+        if std::fs::write(&config_path, new_content).is_ok() {
+            return true;
         }
+    }
     false
 }
 
@@ -163,10 +123,12 @@ pub fn remove_path(path: &str) -> bool {
     true
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod test {
     use super::add_path;
 
+    /// Unix-only: `/xxx` is not an absolute path on Windows (no drive prefix),
+    /// so `add_path` rejects it there before touching any config file.
     #[test]
     fn test_add_path() {
         let s = "/xxx";
