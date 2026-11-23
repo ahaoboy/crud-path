@@ -15,23 +15,6 @@ where
         .is_ok()
 }
 
-/// Run `cmd` and return its trimmed stdout, or `None` when it cannot run.
-pub(crate) fn exec_output<S, I>(cmd: S, args: I) -> Option<String>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    let output = std::process::Command::new(cmd)
-        .envs(std::env::vars())
-        .args(args)
-        .output()
-        .ok()?;
-    output
-        .status
-        .success()
-        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
-}
-
 /// Whether `content` already contains `line`.
 ///
 /// On Windows/MSYS, comparison is case-insensitive.

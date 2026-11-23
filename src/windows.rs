@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use crate::{
-    DELIMITER, append_line_once, exec, exec_output, expand_path, has_path, remove_from_env_path,
-    to_win_path, unix,
+    DELIMITER, append_line_once, exec, expand_path, has_path, remove_from_env_path, to_win_path,
+    unix,
 };
 use which_shell::Shell;
 
@@ -52,13 +52,14 @@ pub fn add_path(path: &str, force: bool) -> Option<Shell> {
         // Safety: env mutation is not thread-safe, but this CLI is single-threaded.
         unsafe { std::env::set_var("PATH", env_path) };
         // Also add to shell config (bash/zsh/fish) for MSYS2/Git Bash.
-        // Call add_path_to_shell directly to avoid duplicate validation.
+        // `add_path_to_shell` dispatches PowerShell to `$PROFILE` and the rest
+        // to their Unix-style config files.
         if let Some(shell) = which_shell::which_shell()
-            && unix::add_path_to_shell(shell.shell, &abs_path).is_some()
+            && add_path_to_shell(shell.shell, &abs_path).is_some()
         {
             return Some(shell.shell);
         }
-        if unix::add_path_to_shell(Shell::Bash, &abs_path).is_some() {
+        if add_path_to_shell(Shell::Bash, &abs_path).is_some() {
             return Some(Shell::Bash);
         }
         return Some(Shell::PowerShell);
@@ -80,18 +81,9 @@ pub fn add_path_to_shell(shell: Shell, path: &str) -> Option<PathBuf> {
 }
 
 fn add_to_powershell_profile(shell: Shell, path: &str) -> Option<PathBuf> {
-    let program = if matches!(shell, Shell::Pwsh) {
-        "pwsh"
-    } else {
-        "powershell"
-    };
-    let profile = exec_output(program, ["-NoProfile", "-Command", "$PROFILE"])?;
-    if profile.is_empty() {
-        log::error!("'{program}' did not report a profile path");
-        return None;
-    }
+    // `Shell::config_file` resolves `$PROFILE` for PowerShell on Windows.
+    let file = shell.config_file()?;
     let line = shell.path_line(path)?;
-    let file = PathBuf::from(profile);
     append_line_once(&file, &line).then_some(file)
 }
 
@@ -149,7 +141,11 @@ pub fn remove_path(path: &str) -> bool {
 mod test {
     use super::add_path;
 
+    /// Mutates the real user `PATH` (registry) and shell profile, so it is not
+    /// part of the automated suite. Run manually with
+    /// `cargo test -- --ignored`.
     #[test]
+    #[cfg_attr(windows, ignore = "writes to the real user PATH and the shell profile")]
     fn test_add_path() {
         let s = "c:/xxx";
         let s = add_path(s, false);
